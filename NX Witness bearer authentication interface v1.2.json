@@ -1,0 +1,493 @@
+[
+    {
+        "id": "862272b27cf6743f",
+        "type": "subflow",
+        "name": "NX Witness ZCP Auth Interface",
+        "info": "",
+        "category": "",
+        "in": [],
+        "out": [],
+        "env": [],
+        "meta": {},
+        "color": "#DDAA99"
+    },
+    {
+        "id": "3cebe338edfde6cb",
+        "type": "http request",
+        "z": "862272b27cf6743f",
+        "g": "5ebf929dcb069baa",
+        "name": "Post to /rest/v4/login/sessions",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "324231baa38397a4",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 810,
+        "y": 160,
+        "wires": [
+            [
+                "e67a6b6054a37f9f"
+            ]
+        ]
+    },
+    {
+        "id": "d05bb2c19371a7b5",
+        "type": "function",
+        "z": "862272b27cf6743f",
+        "g": "5ebf929dcb069baa",
+        "name": "Fomat command to NX API to obtain token",
+        "func": "// Set the HTTP method and headers\nmsg.method = \"POST\";\nmsg.headers = {\n    \"Content-Type\": \"application/json\"\n};\n\n// Set the target URL (optional if you're setting the URL in the HTTP Request node directly)\nmsg.url = \"https://\" + global.get(\"nxip\") + \":7001/rest/v4/login/sessions\";\n\n// Set the JSON body\nmsg.payload = {\n    username: global.get(\"nxuser\"),\n    password: global.get(\"nxpw\"),\n    setCookie: true,\n    durationS: 100\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 470,
+        "y": 160,
+        "wires": [
+            [
+                "3cebe338edfde6cb"
+            ]
+        ]
+    },
+    {
+        "id": "e67a6b6054a37f9f",
+        "type": "json",
+        "z": "862272b27cf6743f",
+        "g": "5ebf929dcb069baa",
+        "name": "Convert to Object",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 1070,
+        "y": 160,
+        "wires": [
+            [
+                "258b8ce66474470b"
+            ]
+        ]
+    },
+    {
+        "id": "258b8ce66474470b",
+        "type": "function",
+        "z": "862272b27cf6743f",
+        "g": "5ebf929dcb069baa",
+        "name": "Store token in global variable",
+        "func": "//Store the NX Bearer token in a global variable\n\nglobal.set(\"nxauthtoken\", msg.payload.token);\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1320,
+        "y": 160,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "6e8deae4f26e8432",
+        "type": "function",
+        "z": "862272b27cf6743f",
+        "g": "5ebf929dcb069baa",
+        "name": "Fomat command to obtain events from NX",
+        "func": "// Set the HTTP method and headers\nmsg.method = \"GET\";\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + global.get(\"nxauthtoken\")\n};\n\n// Set the target URL (optional if you're setting the URL in the HTTP Request node directly)\nmsg.url = \"https://\" + global.get(\"nxip\") + \":7001/rest/v4/events/rules\";\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 460,
+        "y": 220,
+        "wires": [
+            [
+                "3b8bb01d340d768d"
+            ]
+        ]
+    },
+    {
+        "id": "3b8bb01d340d768d",
+        "type": "http request",
+        "z": "862272b27cf6743f",
+        "g": "5ebf929dcb069baa",
+        "name": "Get from /res/v4/events/rules",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "324231baa38397a4",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 800,
+        "y": 220,
+        "wires": [
+            [
+                "78b752ef0cae1e91"
+            ]
+        ]
+    },
+    {
+        "id": "78b752ef0cae1e91",
+        "type": "json",
+        "z": "862272b27cf6743f",
+        "g": "5ebf929dcb069baa",
+        "name": "Convert to Object",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 1070,
+        "y": 220,
+        "wires": [
+            [
+                "27b92c906d43b279"
+            ]
+        ]
+    },
+    {
+        "id": "27b92c906d43b279",
+        "type": "function",
+        "z": "862272b27cf6743f",
+        "g": "5ebf929dcb069baa",
+        "name": "Find all rules with title containing the word \"Zenitel\" and format to update the bearer token",
+        "func": "let groupedArray = msg.payload;\n\n// Flatten the grouped arrays into one\nlet flatArray = groupedArray.flat();\n\n// Filter for objects with comment === \"Zenitel\"\nlet matchingItems = flatArray.filter(item =>\n    item.comment && item.comment.toLowerCase().includes(\"zenitel\")\n);\n\n// Extract the IDs\nlet matchingIds = matchingItems.map(item => item.id);\n\n// Fetch the global token from the global context (zcpauthtoken)\nlet authToken = global.get(\"zcpauthtoken\");\n\n// Ensure we have the token in the global context\nif (!authToken) {\n    node.warn(\"No token found in global context (zcpauthtoken).\");\n    return null;  // Stop further processing if no token is found\n}\n\n// If no matching IDs were found, return early\nif (matchingIds.length === 0) {\n    node.warn(\"No items with comment = 'zenitel' found.\");\n    return null;  // Stop if there are no matching items\n}\n\n// Set up the HTTP requests to patch each item\nlet requests = matchingIds.map(id => {\n    let msgClone = { ...msg };  // Clone the original message so we don't modify the original flow\n\n    // Update the action object with the token for each id\n    msgClone.payload = {\n        action: {\n            auth: {\n                authType: \"authBearer\",\n                login: global.get(\"zcpuser\"),\n                token: authToken  // Update the token from global context\n            },\n        },\n    };\n\n    // Set up HTTP PATCH request settings\n    msgClone.method = \"PATCH\";\n    msgClone.url = \"https://\" + global.get(\"nxip\") + \":7001/rest/v4/events/rules/\" + id;  // Replace with the actual URL\n    msgClone.headers = {\n        \"Content-Type\": \"application/json\",\n        \"Authorization\": \"Bearer \" + global.get(\"nxauthtoken\")\n    };\n\n    return msgClone;  // Return each modified message for PATCH request\n});\n\n// Send out each HTTP PATCH request in parallel\nreturn [requests];\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1510,
+        "y": 220,
+        "wires": [
+            [
+                "7cdbc12cca2dea07"
+            ]
+        ]
+    },
+    {
+        "id": "481e67669268de14",
+        "type": "http request",
+        "z": "862272b27cf6743f",
+        "g": "5ebf929dcb069baa",
+        "name": "Post to /api/auth/login",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "324231baa38397a4",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 780,
+        "y": 100,
+        "wires": [
+            [
+                "bb9d4c1da7bec09b"
+            ]
+        ]
+    },
+    {
+        "id": "79b77558e9fac6eb",
+        "type": "inject",
+        "z": "862272b27cf6743f",
+        "g": "5ebf929dcb069baa",
+        "name": "Update trigger",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "80",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 180,
+        "y": 100,
+        "wires": [
+            [
+                "3602862a8f98ca46",
+                "863774315bcb87e2"
+            ]
+        ]
+    },
+    {
+        "id": "3602862a8f98ca46",
+        "type": "function",
+        "z": "862272b27cf6743f",
+        "g": "5ebf929dcb069baa",
+        "name": "Format command to ZCP API to obtain token",
+        "func": "// Create the Basic Auth string: base64(\"username:password\")\nlet authString = Buffer.from(global.get(\"zcpuser\") + \":\" + global.get(\"zcppw\")).toString('base64');\n\n// Set the Authorization header\nmsg.method = \"POST\";\nmsg.headers = {\n    Authorization: \"Basic \" + authString\n};\n\n// Set the target URL (optional if you're setting the URL in the HTTP Request node directly)\nmsg.url = \"https://\" + global.get(\"zcpip\") + \"/api/auth/login\";\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 470,
+        "y": 100,
+        "wires": [
+            [
+                "481e67669268de14"
+            ]
+        ]
+    },
+    {
+        "id": "1d50c3e491384c91",
+        "type": "function",
+        "z": "862272b27cf6743f",
+        "g": "5ebf929dcb069baa",
+        "name": "Store token in global variable",
+        "func": "//Store the ZCP Bearer token in a global variable\nglobal.set(\"zcpauthtoken\", msg.payload.access_token);\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1320,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "bb9d4c1da7bec09b",
+        "type": "json",
+        "z": "862272b27cf6743f",
+        "g": "5ebf929dcb069baa",
+        "name": "Convert to Object",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 1070,
+        "y": 100,
+        "wires": [
+            [
+                "1d50c3e491384c91"
+            ]
+        ]
+    },
+    {
+        "id": "7cdbc12cca2dea07",
+        "type": "http request",
+        "z": "862272b27cf6743f",
+        "g": "5ebf929dcb069baa",
+        "name": "Patch to /rest/v4/events/rules/{id}",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "324231baa38397a4",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 2020,
+        "y": 220,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "446f88117595dfb5",
+        "type": "delay",
+        "z": "862272b27cf6743f",
+        "g": "5ebf929dcb069baa",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 160,
+        "y": 220,
+        "wires": [
+            [
+                "6e8deae4f26e8432"
+            ]
+        ]
+    },
+    {
+        "id": "863774315bcb87e2",
+        "type": "delay",
+        "z": "862272b27cf6743f",
+        "g": "5ebf929dcb069baa",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 160,
+        "y": 160,
+        "wires": [
+            [
+                "d05bb2c19371a7b5",
+                "446f88117595dfb5"
+            ]
+        ]
+    },
+    {
+        "id": "5ebf929dcb069baa",
+        "type": "group",
+        "z": "862272b27cf6743f",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "3cebe338edfde6cb",
+            "d05bb2c19371a7b5",
+            "e67a6b6054a37f9f",
+            "258b8ce66474470b",
+            "6e8deae4f26e8432",
+            "3b8bb01d340d768d",
+            "78b752ef0cae1e91",
+            "27b92c906d43b279",
+            "481e67669268de14",
+            "79b77558e9fac6eb",
+            "3602862a8f98ca46",
+            "1d50c3e491384c91",
+            "bb9d4c1da7bec09b",
+            "7cdbc12cca2dea07",
+            "446f88117595dfb5",
+            "863774315bcb87e2"
+        ],
+        "x": 54,
+        "y": 59,
+        "w": 2132,
+        "h": 202
+    },
+    {
+        "id": "324231baa38397a4",
+        "type": "tls-config",
+        "name": "",
+        "cert": "",
+        "key": "",
+        "ca": "",
+        "certname": "",
+        "keyname": "",
+        "caname": "",
+        "servername": "",
+        "verifyservercert": false,
+        "alpnprotocol": ""
+    },
+    {
+        "id": "a6d4c3ab55f4f581",
+        "type": "tab",
+        "label": "NX Witness Authentication Interface",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "0e7e91d796968469",
+        "type": "function",
+        "z": "a6d4c3ab55f4f581",
+        "name": "Setup details",
+        "func": "////////////////////////////////////////////////////\n// ZCP to NX Witness Interface                    //\n// Handles updating of the ZCP bearer token       //\n// into each NX Witness event                     //\n// Each NX Witness event must have Zenitel        //\n// somewhere in the Title/Comment                 //\n// Fill in the following details between the \" \"  //\n////////////////////////////////////////////////////\n\n\n// Set the IP Address of the ZCP Server\n// Replace <zcp_ip_address> with your ZCP Server Address\n// Example \"192.168.1.1\"\n\nvar lzcpip = \"<zcp_ip_address>\";\n\n// Set the Zenitel Link username\n// Replace <link_username> with your ZenitelLink Username\n// Example \"username\"\n\nvar lzcpuser = \"<link_username>\";\n\n// Set the Zenitel Link password\n// Replace <link_password> with your ZenitelLink User password\n// Example \"password\"\n\nvar lzcppw = \"<link_password>\";\n\n//Set the IP Address of the NX Witness Server\n// Replace <nx_ip_address> with your NZ Witness Server Address\n// Example \"192.168.1.2\"\n\nvar lnxip = \"<nx_ip_address>\";\n\n//Set the NX Username\n// Replace <nx_username> with your NZ Witness username\n// Example \"username\"\n\nvar lnxuser = \"<nx_username>\";\n\n//Set the NX Password\n// Replace <nx_password> with your NZ Witness password\n// Example \"password\"\n\nvar lnxpw = \"<nx_password>\";\n\n///////////////////////////////////////////////\n// DO NOT EDIT ANY FURTHER IN THIS NODE      //\n///////////////////////////////////////////////\n\nglobal.set(\"zcpip\", lzcpip);\nglobal.set(\"zcpuser\", lzcpuser);\nglobal.set(\"zcppw\", lzcppw);\nglobal.set(\"nxip\", lnxip);\nglobal.set(\"nxuser\", lnxuser);\nglobal.set(\"nxpw\", lnxpw);\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 160,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "4eae4d183a6ba364",
+        "type": "inject",
+        "z": "a6d4c3ab55f4f581",
+        "name": "Update trigger",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 220,
+        "y": 160,
+        "wires": [
+            [
+                "0e7e91d796968469"
+            ]
+        ]
+    },
+    {
+        "id": "c6f69d695882cbdc",
+        "type": "comment",
+        "z": "a6d4c3ab55f4f581",
+        "name": "Edit the Setup Details function node with your ZCP and NX details",
+        "info": "",
+        "x": 350,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "ae46cdf627107727",
+        "type": "subflow:862272b27cf6743f",
+        "z": "a6d4c3ab55f4f581",
+        "name": "",
+        "x": 290,
+        "y": 240,
+        "wires": []
+    }
+]
