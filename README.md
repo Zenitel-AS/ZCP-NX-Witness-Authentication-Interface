@@ -1,4 +1,4 @@
-NX Witness can interface to Zenitel Connect Pro using REST.
+#NX Witness can interface to Zenitel Connect Pro using REST.
 
 A Node-RED flow is required to handle authentication updates of the bearer tokens for both ZCP and NX Witness.
 NX Witness events can then be used to trigger events in ZCP using the REST interface.
