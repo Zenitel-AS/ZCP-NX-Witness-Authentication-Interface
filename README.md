@@ -11,15 +11,10 @@ It's assumed that you have already created a Zenitel Link account in Zenitel Con
 Import the Node-RED flow into Node-RED. Edit the Setup Details node and update with the required settings
 
 Connect Pro IP Address
-
 Connect Pro Zenitel Link Username
-
 Connect Pro Zenitel Link Password
-
 NX Witness IP Address
-
 NX Witness Username
-
 NX Witness Password
 
 Deploy the flow and it will obtain the bearer tokens and begin scraping the NX Witness Events for the word Zenitel anywhere in the Title.
